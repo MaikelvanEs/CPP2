@@ -1,5 +1,6 @@
 #ifndef _DECK_H
 #define _DECK_H
+#include <initializer_list>
 
 namespace cards {
 
