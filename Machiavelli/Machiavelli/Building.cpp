@@ -15,6 +15,6 @@ std::string Building::getInfo() const
 	result += ", " + value_;
 	if (special_.length() != 0)
 		result += ", " + special_;
-	result += ")";
+	result += ")\r\n";
 	return result;
 }

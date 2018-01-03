@@ -3,6 +3,7 @@
 Character::Character(const int number, const std::string name)
 	: number_(number)
 	, name_(name)
+	, ability_(true)
 {
 	switch (number_)
 	{
@@ -26,5 +27,15 @@ Character::Character(const int number, const std::string name)
 
 std::string Character::getInfo() const
 {
-	return name_;
+	return "[" + std::to_string(number_) + "] " + name_ + "\r\n";
+}
+
+int Character::getNumber() const
+{
+	return number_;
+}
+
+void Character::setAbility(const bool ability)
+{
+	ability_ = ability;
 }

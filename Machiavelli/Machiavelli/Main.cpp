@@ -31,7 +31,7 @@ static bool running = true;
 
 static Sync_queue<ClientCommand> queue;
 
-static Game game;
+std::shared_ptr<Game> game;
 
 void consume_command() // runs in its own thread
 {
@@ -42,8 +42,10 @@ void consume_command() // runs in its own thread
                 auto &client = clientInfo->get_socket();
                 auto &player = clientInfo->get_player();
                 try {
-					// TODO handle command here
-					client << player.get_name() << ", you wrote: '" << command.get_cmd() << "', but I'll ignore that for now.\r\n" << machiavelli::prompt;
+					if (player.isWaiting())
+						client.write("\r\nWacht op andere speler, het is niet jouw beurt.\r\n");
+                	else
+                		player.handleCommand(command.get_cmd());
                 } catch (const exception& ex) {
                     cerr << "*** exception in consumer thread for player " << player.get_name() << ": " << ex.what() << '\n';
                     if (client.is_open()) {
@@ -85,8 +87,8 @@ void handle_client(Socket client) // this function runs in a separate thread
         socket << "Welcome, " << player.get_name() << ", have fun playing our game!\r\n" << machiavelli::prompt;
 
 		socket.write("Wait for other player!\r\n");
-		game.addToGame(client_info);
-		player.setGame(make_shared<Game>(game));
+		game->addToGame(client_info);
+		player.setGame(game);
 
         while (running) { // game loop
             try {
@@ -124,6 +126,9 @@ void handle_client(Socket client) // this function runs in a separate thread
 
 int main(int argc, const char * argv[])
 {
+	Game newGame;
+	game = make_shared<Game>(newGame);
+
     // start command consumer thread
     vector<thread> all_threads;
     all_threads.emplace_back(consume_command);
@@ -134,7 +139,7 @@ int main(int argc, const char * argv[])
     try {
         cerr << "server listening" << '\n';
         while (running) {
-            // wait for connection from client; will create new socket
+            // eWait for connection from client; will create new socket
             server.accept([&all_threads](Socket client) {
                 std::cerr << "Connection accepted from " << client.get_dotted_ip() << "\n";
                 all_threads.emplace_back(handle_client, move(client));

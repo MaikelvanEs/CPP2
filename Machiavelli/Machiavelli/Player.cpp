@@ -10,13 +10,12 @@
 #include "Game.h"
 using namespace std;
 
-Player::Player()
-{
-}
-
 Player::Player(const std::string& name)
 	: name_(name)
 	, playing_(false)
+	, gold_(0)
+	, state_(eWait)
+	, king_(false)
 {
 }
 
@@ -30,7 +29,7 @@ void Player::set_name(const std::string& new_name)
 	name_ = new_name;
 }
 
-void Player::setGame(std::shared_ptr<Game> game)
+void Player::setGame(const std::shared_ptr<Game> game)
 {
 	game_ = game;
 }
@@ -43,6 +42,8 @@ void Player::endGame()
 void Player::setPlaying(const bool playing)
 {
 	playing_ = playing;
+	if (playing_)
+		state_ = eWait;
 }
 
 bool Player::isPlaying() const
@@ -50,12 +51,65 @@ bool Player::isPlaying() const
 	return playing_;
 }
 
-void Player::setTurn(const bool turn)
+void Player::addCharacter(const Character character)
 {
-	turn_ = turn;
+	characters_.push_back(character);
 }
 
-bool Player::isTurn() const
+bool Player::hasCharacter(const int character)
 {
-	return turn_;
+	for (Character name : characters_)
+	{
+		if (name.getNumber() == character)
+			return true;
+	}
+	return false;
+}
+
+void Player::setState(const int state)
+{
+	state_ = state;
+}
+
+void Player::setKing(const int king)
+{
+	king_ = king;
+}
+
+bool Player::hasKing()
+{
+	for (Character name : characters_)
+	{
+		if (name.getNumber() == koning)
+			return true;
+	}
+	return false;
+}
+
+bool Player::wasKing() const
+{
+	return king_;
+}
+
+void Player::handleCommand(const std::string command) const
+{
+	const int cmd = stoi(command);
+	switch (state_)
+	{
+	case eTakeCharacter:
+		game_->takeCharacter(cmd);
+		break;
+	case eDiscardCharacter:
+		game_->discardCharacter(cmd);
+		break;
+	default:
+		break;
+	}
+}
+
+bool Player::isWaiting() const
+{
+	if (state_ == eWait)
+		return true;
+	return false;
 }

@@ -11,3 +11,14 @@ enum Characters
 	bouwmeester,
 	condottiere
 };
+
+enum PlayerState
+{
+	eWait,
+	eTakeCharacter,
+	eDiscardCharacter,
+	eTurnStart,
+	eBuild,
+	eTurnEnd,
+	eUsingCharacterPower
+};
