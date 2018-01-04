@@ -9,7 +9,7 @@ enum Characters
 	prediker,
 	koopman,
 	bouwmeester,
-	condottiere
+	condotierre
 };
 
 enum PlayerState
@@ -18,6 +18,7 @@ enum PlayerState
 	eTakeCharacter,
 	eDiscardCharacter,
 	eTurnStart,
+	eDiscardBuilding,
 	eBuild,
 	eTurnEnd,
 	eUsingCharacterPower

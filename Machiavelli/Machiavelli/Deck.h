@@ -20,6 +20,18 @@ namespace cards {
 			drawPile_ = cards;
 		}
 
+		~Deck()
+		{
+			drawPile_.clear();
+			discardPile_.clear();
+		}
+
+		void clear()
+		{
+			drawPile_.clear();
+			discardPile_.clear();
+		}
+
 		void shuffle_stack()
 		{
 			merge_stacks();
@@ -38,7 +50,7 @@ namespace cards {
 
 		T draw()
 		{
-			T card = drawPile_.begin();
+			T card = *drawPile_.begin();
 			drawPile_.erase(drawPile_.begin());
 			return card;
 		}

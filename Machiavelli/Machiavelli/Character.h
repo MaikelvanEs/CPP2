@@ -2,6 +2,8 @@
 #include "Enums.h"
 #include <string>
 
+class Socket;
+
 class Character
 {
 public:
@@ -10,10 +12,14 @@ public:
 	std::string getInfo() const;
 	int getNumber() const;
 	void setAbility(const bool ability);
+	bool hasAbility() const;
+	void setAlive(const bool alive);
+	bool isAlive() const;
 
 private:
 	int number_;
 	std::string name_;
 	std::string colour_;
 	bool ability_;
+	bool alive_;
 };

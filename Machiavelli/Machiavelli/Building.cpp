@@ -8,6 +8,10 @@ Building::Building(const std::string name, const int value, const std::string co
 {
 }
 
+Building::~Building()
+{
+}
+
 std::string Building::getInfo() const
 {
 	std::string result = name_;

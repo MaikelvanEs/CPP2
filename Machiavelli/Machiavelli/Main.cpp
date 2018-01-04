@@ -42,14 +42,18 @@ void consume_command() // runs in its own thread
                 auto &client = clientInfo->get_socket();
                 auto &player = clientInfo->get_player();
                 try {
-					if (player.isWaiting())
+					if (command.get_cmd() == "help")
+					{
+						client.write("\r\n" + game->getHelp());
+					}
+					else if (player.isWaiting())
 						client.write("\r\nWacht op andere speler, het is niet jouw beurt.\r\n");
                 	else
                 		player.handleCommand(command.get_cmd());
                 } catch (const exception& ex) {
                     cerr << "*** exception in consumer thread for player " << player.get_name() << ": " << ex.what() << '\n';
                     if (client.is_open()) {
-                        client.write("Sorry, something went wrong during handling of your request.\r\n");
+                        client.write("Ongeldige keuze gemaakt. Probeer opnieuw.\r\n");
                     }
                 } catch (...) {
                     cerr << "*** exception in consumer thread for player " << player.get_name() << '\n';
@@ -126,8 +130,8 @@ void handle_client(Socket client) // this function runs in a separate thread
 
 int main(int argc, const char * argv[])
 {
-	Game newGame;
-	game = make_shared<Game>(newGame);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	game = make_shared<Game>();
 
     // start command consumer thread
     vector<thread> all_threads;
@@ -156,8 +160,5 @@ int main(int argc, const char * argv[])
         t.join();
     }
 
-	_CrtDumpMemoryLeaks();
-
     return 0;
 }
-

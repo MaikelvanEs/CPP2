@@ -59,7 +59,7 @@
         {
             int iResult = WSAStartup(MAKEWORD(2, 2), &data);
             if (iResult != 0) {
-                std::cerr << "WSAStartup failed with error: " << iResult << '\n';
+                std::cerr << "WSAStartup failed with error: " << iResult << '\r\n';
             }
         }
         ~WSA()
@@ -189,7 +189,7 @@ Socket::~Socket()
 
 void Socket::close()
 {
-    std::cerr << "will close socket " << sock << '\n';
+    std::cerr << "will close socket " << sock << '\r\n';
 #if defined(__APPLE__) || defined(__linux__)
     throw_if_min1(::close(sock));
 #else

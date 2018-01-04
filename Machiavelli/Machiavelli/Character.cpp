@@ -1,9 +1,11 @@
 #include "Character.h"
+#include "Socket.h"
 
 Character::Character(const int number, const std::string name)
 	: number_(number)
 	, name_(name)
 	, ability_(true)
+	, alive_(true)
 {
 	switch (number_)
 	{
@@ -16,7 +18,7 @@ Character::Character(const int number, const std::string name)
 		case koopman:
 			colour_ = "groen";
 			break;
-		case condottiere:
+		case condotierre:
 			colour_ = "rood";
 			break;
 		default:
@@ -38,4 +40,19 @@ int Character::getNumber() const
 void Character::setAbility(const bool ability)
 {
 	ability_ = ability;
+}
+
+bool Character::hasAbility() const
+{
+	return ability_;
+}
+
+void Character::setAlive(const bool alive)
+{
+	alive_ = alive;
+}
+
+bool Character::isAlive() const
+{
+	return alive_;
 }

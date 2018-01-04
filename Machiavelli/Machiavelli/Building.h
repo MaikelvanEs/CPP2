@@ -5,6 +5,7 @@ class Building
 {
 public:
 	Building(const std::string name, const int value, const std::string colour, const std::string special);
+	~Building();
 
 	std::string getInfo() const;
 

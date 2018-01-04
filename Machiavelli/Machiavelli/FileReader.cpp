@@ -22,5 +22,6 @@ std::vector<std::string> FileReader::readFile(const std::string fileName) const
 			result.push_back(line);
 		}
 	}
+	file.close();
 	return result;
 }
