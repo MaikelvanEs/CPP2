@@ -23,36 +23,54 @@ public:
 	Player(const std::string& name);
 	~Player();
 
-	std::string get_name() const;
-	void set_name(const std::string& new_name);
+	std::string getName() const;
+	void setName(const std::string& new_name);
+
 	void setGame(const std::shared_ptr<Game> game);
 	void setPlaying(const bool playing);
 	bool isPlaying() const;
+
 	void addCharacter(const Character character);
 	bool hasCharacter(const int character);
-	void setState(const int state);
-	void setKing(const int king);
-	bool hasKing();
-	bool wasKing() const;
-	void showGold(Socket& socket) const;
-	void showBuildings(Socket& socket) const;
-	void showCards(Socket& socket) const;
-	void showChoices(Socket& socket) const;
-	void addGold();
-	void addGold(const int gold);
-	void drawBuilding(const Building card);
-	void useCharacter(const int number, Socket& socket);
+	void useCharacter(const int number, Socket& socket, const int choice = 0);
 	Character getCharacter();
 	Character getCharacter(const int name);
 	std::vector<int> getAliveCharacters(const int startName);
-	void killCharacter(const int name);
+	void killCharacter(const int name, Socket& socket);
+
+	void setKing(const int king);
+	bool hasKing();
+	bool wasKing() const;
+
+	void setState(const int state);
+	bool isWaiting() const;
+	
+	void showGold(Socket& socket) const;
+	void addGold();
+	void addGold(const int gold);
+	void removeGold();
 	void steal();
 	bool isStolen() const;
 	int giveGold();
+
+	void showBuildings(Socket& socket) const;
+	void drawBuilding(const Building card);
+	void showBuildingChoices(Socket& socket);
+	int getBuildingAmount() const;
+	bool checkBuilding(const int choice, const int gold);
+	Building removeBuilding(const int choice);
+
+	void showCards(Socket& socket) const;
 	std::vector<Building> getHand();
 	void setHand(std::vector<Building> buildings);
-	void handleCommand(std::string command) const;
-	bool isWaiting() const;
+	void convertHand();
+	
+	void showChoices(Socket& socket) const;
+	void handleCommand(std::string command);
+	
+	int countBuildings();
+	int checkColours();
+	int checkBuildingAmount() const;
 
 private:
     std::string name_;
@@ -60,6 +78,7 @@ private:
 	bool playing_;
 	int gold_;
 	int state_;
+	int previousState_;
 	bool king_;
 	bool stolen_;
 	std::vector<Building> buildBuildings_;
@@ -67,14 +86,18 @@ private:
 	std::vector<Building> chooseBuildings_;
 	std::vector<Character> characters_;
 
-	void moordenaarAbility(Socket& socket, const int choice = 0) const;
-	void diefAbility(Socket& socket, const int choice = 0) const;
-	void magierAbility(Socket& socket, const int choice = 0) const;
+	void moordenaarAbility(Socket& socket, const int choice = 0);
+	void diefAbility(Socket& socket, const int choice = 0);
+	void magierAbility(Socket& socket, const int choice = 0);
 	void koningAbility(Socket& socket);
 	void predikerAbility(Socket& socket);
 	void koopmanAbility(Socket& socket);
-	void bouwmeesterAbility(Socket& socket);
-	void condotierreAbility(Socket& socket);
+	void bouwmeesterAbility(Socket& socket, const int choice = 0);
+	void condotierreAbility(Socket& socket, const int choice = 0);
+
+	void discardBuilding(const int choice);
+	void build(const int choice);
+	void removeCard(const int choice);
 };
 
 #endif /* Player_hpp */

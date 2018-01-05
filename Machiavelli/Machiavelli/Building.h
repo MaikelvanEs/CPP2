@@ -8,6 +8,9 @@ public:
 	~Building();
 
 	std::string getInfo() const;
+	std::string getColour() const;
+	std::string getName() const;
+	int getValue() const;
 
 private:
 	std::string name_;

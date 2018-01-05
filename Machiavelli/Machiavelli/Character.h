@@ -11,6 +11,7 @@ public:
 
 	std::string getInfo() const;
 	int getNumber() const;
+	std::string getName() const;
 	void setAbility(const bool ability);
 	bool hasAbility() const;
 	void setAlive(const bool alive);

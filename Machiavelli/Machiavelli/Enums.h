@@ -2,7 +2,8 @@
 
 enum Characters
 {
-	moordenaar = 1,
+	start,
+	moordenaar,
 	dief,
 	magier,
 	koning,
@@ -20,6 +21,10 @@ enum PlayerState
 	eTurnStart,
 	eDiscardBuilding,
 	eBuild,
+	eBuildBuilding,
 	eTurnEnd,
-	eUsingCharacterPower
+	eUsingCharacterPower,
+	eBuildTwoBuildings,
+	eBuildOneBuilding,
+	eMagier
 };

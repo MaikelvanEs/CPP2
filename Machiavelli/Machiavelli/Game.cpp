@@ -2,7 +2,8 @@
 
 Game::Game()
 {
-	gold_ = 30;
+	gold_ = 26;
+	firstToEight_ = 0;
 	createBuildings();
 	createCharacters();
 }
@@ -22,18 +23,82 @@ void Game::addToGame(const std::shared_ptr<ClientInfo> client)
 	{
 		client2_ = client;
 		//client2_->get_player().setGame(std::make_shared<Game>(*this));
-		auto &player1 = client1_->get_player();
-		player1.setPlaying(true);
-		auto &player2 = client2_->get_player();
-		player2.setPlaying(true);
+		client1_->get_player().setPlaying(true);
+		client2_->get_player().setPlaying(true);
 		startGame();
+	}
+}
+
+void Game::endGame() const
+{
+	client1_->get_socket().write("\r\nSpel wordt afgesloten.\r\n");
+	client2_->get_socket().write("\r\nSpel wordt afgesloten.\r\n");
+	showVictor();
+}
+
+void Game::setFirstToEight()
+{
+	if (firstToEight_ == 0)
+	{
+		if (currentClient_ == client1_)
+			firstToEight_ = 1;
+		else
+			firstToEight_ = 2;
+	}
+}
+
+void Game::showVictor() const
+{
+	const int buildings1 = client1_->get_player().countBuildings();
+	const int buildings2 = client2_->get_player().countBuildings();
+	int score1 = buildings1;
+	int score2 = buildings2;
+	score1 += client1_->get_player().checkColours();
+	score2 += client2_->get_player().checkColours();
+	if (firstToEight_ == 1)
+	{
+		score1 += 4;
+		score2 += client2_->get_player().checkBuildingAmount();
+	}
+	else if (firstToEight_ == 2)
+	{
+		score2 += 4;
+		score1 += client1_->get_player().checkBuildingAmount();
+	}
+	if (score1 > score2)
+	{
+		client1_->get_socket().write("\r\nJe hebt gewonnen.\r\n");
+		client2_->get_socket().write("\r\nJe hebt verloren.\r\n");
+	}
+	else if (score2 > score1)
+	{
+		client2_->get_socket().write("\r\nJe hebt gewonnen.\r\n");
+		client1_->get_socket().write("\r\nJe hebt verloren.\r\n");
+	}
+	else
+	{
+		if (buildings1 > buildings2)
+		{
+			client1_->get_socket().write("\r\nJe hebt gewonnen.\r\n");
+			client2_->get_socket().write("\r\nJe hebt verloren.\r\n");
+		}
+		else if (buildings2 > buildings1)
+		{
+			client2_->get_socket().write("\r\nJe hebt gewonnen.\r\n");
+			client1_->get_socket().write("\r\nJe hebt verloren.\r\n");
+		}
+		else
+		{
+			client1_->get_socket().write("\r\nHet is een gelijkspel.\r\n");
+			client2_->get_socket().write("\r\nHet is een gelijkspel.\r\n");
+		}
 	}
 }
 
 void Game::endTurn()
 {
 	nextCharacter();
-	if (currentCharacter_ == moordenaar)
+	if (currentCharacter_ == start)
 	{
 		newRound();
 	}
@@ -42,13 +107,19 @@ void Game::endTurn()
 		while (!findNextCharacter())
 		{
 			nextCharacter();
-			if (currentCharacter_ == moordenaar)
+			if (currentCharacter_ == start)
 			{
 				newRound();
 			}
 		}
 		newTurn();
 	}
+}
+
+void Game::showChoices() const
+{
+
+	currentClient_->get_player().showChoices(currentClient_->get_socket());
 }
 
 void Game::takeCharacter(const int name)
@@ -113,9 +184,60 @@ void Game::turnStartChoice(const int choice)
 		break;
 	case 2:
 		takeGold();
+		currentClient_->get_player().setState(eBuild);
+		currentClient_->get_player().showChoices(currentClient_->get_socket());
 		break;
 	case 3:
 		takeBuildings();
+		currentClient_->get_player().setState(eDiscardBuilding);
+		break;
+	default:
+		break;
+	}
+}
+
+void Game::buildChoice(const int choice)
+{
+	switch(choice)
+	{
+	case 0:
+		showOpponent();
+		break;
+	case 1:
+		currentClient_->get_player().useCharacter(currentCharacter_, currentClient_->get_socket());
+		break;
+	case 2:
+		currentClient_->get_socket().write("\r\nKies een gebouw om te bouwen.\r\n");
+		currentClient_->get_player().setState(eBuildBuilding);
+		currentClient_->get_player().showCards(currentClient_->get_socket());
+		break;
+	case 9:
+		currentClient_->get_socket().write("\r\nBeurt is beeindigd\r\n");
+		endTurn();
+		break;
+	default:
+		break;
+	}
+}
+
+void Game::useCharacter(const int choice) const
+{
+	currentClient_->get_player().useCharacter(currentCharacter_, currentClient_->get_socket(), choice);
+}
+
+void Game::endChoice(const int choice)
+{
+	switch (choice)
+	{
+	case 0:
+		showOpponent();
+		break;
+	case 1:
+		currentClient_->get_player().useCharacter(currentCharacter_, currentClient_->get_socket());
+		break;
+	case 9:
+		currentClient_->get_socket().write("\r\nBeurt is beeindigd\r\n");
+		endTurn();
 		break;
 	default:
 		break;
@@ -128,12 +250,17 @@ std::string Game::getHelp() const
 	return oCard.getInfo();
 }
 
+void Game::write(const std::string text) const
+{
+	currentClient_->get_socket().write(text);
+}
+
 void Game::killCharacter(const int choice) const
 {
 	if (client1_->get_player().hasCharacter(choice))
-		client1_->get_player().killCharacter(choice);
+		client1_->get_player().killCharacter(choice, client1_->get_socket());
 	else if (client2_->get_player().hasCharacter(choice))
-		client2_->get_player().killCharacter(choice);
+		client2_->get_player().killCharacter(choice, client2_->get_socket());
 }
 
 void Game::stealFromCharacter(const int choice) const
@@ -150,6 +277,74 @@ void Game::swapHands() const
 	const auto buildings2 = client2_->get_player().getHand();
 	client1_->get_player().setHand(buildings2);
 	client2_->get_player().setHand(buildings1);
+	client1_->get_socket().write("\r\nKaarten zijn omgeruild met de kaarten van de tegenstander.\r\n");
+	client2_->get_socket().write("\r\nKaarten zijn omgeruild met de kaarten van de tegenstander.\r\n");
+}
+
+void Game::getGold(int gold)
+{
+	for (; gold > 0 && gold_ != 0; gold_--, gold--)
+		currentClient_->get_player().addGold();
+}
+
+void Game::payGold(int gold)
+{
+	for (; gold > 0; gold_++, gold--)
+		currentClient_->get_player().removeGold();
+}
+
+void Game::getBuildings(int amount)
+{
+	for (; amount > 0 && !buildingDeck_.stack_empty(); amount--)
+		currentClient_->get_player().drawBuilding(buildingDeck_.draw());
+}
+
+int Game::getOpponentBuildings() const
+{
+	if (currentClient_ == client1_)
+		return client2_->get_player().getBuildingAmount();
+	return client1_->get_player().getBuildingAmount();
+}
+
+void Game::showOpponentBuildings() const
+{
+	currentClient_->get_socket().write("\r\n");
+	if (currentClient_ == client1_)
+		client2_->get_player().showBuildings(client1_->get_socket());
+	else
+		client1_->get_player().showBuildings(client2_->get_socket());
+}
+
+bool Game::checkRemoveBuilding(const int choice, const int gold) const
+{
+	if (currentClient_ == client1_)
+		return client2_->get_player().checkBuilding(choice, gold);
+	return client1_->get_player().checkBuilding(choice, gold);
+}
+
+int Game::removeOpponentBuilding(const int choice)
+{
+	if (currentClient_ == client1_)
+	{
+		auto building = client2_->get_player().removeBuilding(choice);
+		client2_->get_socket().write("\r\nJe " + building.getName() + " is weggehaald.\r\n");
+		buildingDeck_.discard(building);
+		return building.getValue() - 1;
+	}
+	auto building = client1_->get_player().removeBuilding(choice);
+	client1_->get_socket().write("\r\nJe " + building.getName() + " is weggehaald.\r\n");
+	buildingDeck_.discard(building);
+	return building.getValue() - 1;
+}
+
+void Game::discardBuilding(const Building building)
+{
+	buildingDeck_.discard(building);
+}
+
+Building Game::drawBuilding()
+{
+	return buildingDeck_.draw();
 }
 
 void Game::showAliveCharacters(Socket& socket, const int startName)
@@ -170,28 +365,28 @@ void Game::showAliveCharacters(Socket& socket, const int startName)
 		switch (character)
 		{
 		case moordenaar:
-			socket.write("[0] Moordenaar\r\n");
+			socket.write("[1] Moordenaar\r\n");
 			break;
 		case dief:
-			socket.write("[1] Dief\r\n");
+			socket.write("[2] Dief\r\n");
 			break;
 		case magier:
-			socket.write("[2] Magier\r\n");
+			socket.write("[3] Magier\r\n");
 			break;
 		case koning:
-			socket.write("[3] Koning\r\n");
+			socket.write("[4] Koning\r\n");
 			break;
 		case prediker:
-			socket.write("[4] Prediker\r\n");
+			socket.write("[5] Prediker\r\n");
 			break;
 		case koopman:
-			socket.write("[5] Koopman\r\n");
+			socket.write("[6] Koopman\r\n");
 			break;
 		case bouwmeester:
-			socket.write("[6] Bouwmeester\r\n");
+			socket.write("[7] Bouwmeester\r\n");
 			break;
 		case condotierre:
-			socket.write("[7] Condotierre\r\n");
+			socket.write("[8] Condotierre\r\n");
 			break;
 		default:
 			break;
@@ -239,8 +434,15 @@ void Game::createCharacters()
 
 void Game::startGame()
 {
-	currentCharacter_ = moordenaar;
+	currentCharacter_ = start;
 	currentClient_ = client1_;
+	for (int i = 0; i < 4; i++)
+	{
+		client1_->get_player().drawBuilding(buildingDeck_.draw());
+		client2_->get_player().drawBuilding(buildingDeck_.draw());
+	}
+	client1_->get_player().convertHand();
+	client2_->get_player().convertHand();
 	startRound();
 }
 
@@ -248,8 +450,7 @@ void Game::takeCharacters()
 {
 	if (characterDrawPile_.empty())
 	{
-		currentClient_->get_player().setState(eTurnStart);
-		newTurn();
+		endTurn();
 		return;
 	}
 	auto &socket = currentClient_->get_socket();
@@ -274,51 +475,54 @@ void Game::nextCharacter()
 {
 	switch(currentCharacter_)
 	{
-		case moordenaar:
-			currentCharacter_ = dief;
-			break;
-		case dief:
-			currentCharacter_ = magier;
-			break;
-		case magier:
-			currentCharacter_ = koning;
-			break;
-		case koning:
-			currentCharacter_ = prediker;
-			break;
-		case prediker:
-			currentCharacter_ = koopman;
-			break;
-		case koopman:
-			currentCharacter_ = bouwmeester;
-			break;
-		case bouwmeester:
-			currentCharacter_ = condotierre;
-			break;
-		case condotierre:
-			currentCharacter_ = moordenaar;
-			break;
-		default:
-			break;
+	case start:
+		currentCharacter_ = moordenaar;
+		break;
+	case moordenaar:
+		currentCharacter_ = dief;
+		break;
+	case dief:
+		currentCharacter_ = magier;
+		break;
+	case magier:
+		currentCharacter_ = koning;
+		break;
+	case koning:
+		currentCharacter_ = prediker;
+		break;
+	case prediker:
+		currentCharacter_ = koopman;
+		break;
+	case koopman:
+		currentCharacter_ = bouwmeester;
+		break;
+	case bouwmeester:
+		currentCharacter_ = condotierre;
+		break;
+	case condotierre:
+		currentCharacter_ = start;
+		break;
+	default:
+		break;
 	}
 }
 
 bool Game::findNextCharacter()
 {
-	auto &player = client1_->get_player();
-	if (player.hasCharacter(currentCharacter_))
+	auto &player1 = client1_->get_player();
+	if (player1.hasCharacter(currentCharacter_))
 	{
 		client2_->get_player().setState(eWait);
 		currentClient_ = client1_;
-		player.setState(eTurnStart);
+		player1.setState(eTurnStart);
 		return true;
 	}
-	player = client2_->get_player();
-	if (player.hasCharacter(currentCharacter_))
+	auto &player2 = client2_->get_player();
+	if (player2.hasCharacter(currentCharacter_))
 	{
 		client1_->get_player().setState(eWait);
 		currentClient_ = client2_;
-		player.setState(eTurnStart);
+		player2.setState(eTurnStart);
 		return true;
 	}
 	return false;
@@ -343,25 +547,36 @@ void Game::switchActivePlayer(const int stateCurrentplayer, const int stateNextp
 
 void Game::newRound()
 {
-	auto &player1 = client1_->get_player();
-	auto &player2 = client2_->get_player();
-	if (player1.hasKing())
-	{
-		player1.setKing(true);
-		player2.setKing(false);
-		currentClient_ = client1_;
-	}
-	else if (player2.hasKing())
-	{
-		player2.setKing(true);
-		player1.setKing(false);
-		currentClient_ = client2_;
-	}
-	else if (player1.wasKing())
-		currentClient_ = client1_;
+	if (firstToEight_ != 0)
+		endGame();
 	else
-		currentClient_ = client2_;
-	startRound();
+	{
+		client1_->get_socket().write("\r\nNieuwe ronde gestart.\r\n");
+		client2_->get_socket().write("\r\nNieuwe ronde gestart.\r\n");
+		auto &player1 = client1_->get_player();
+		auto &player2 = client2_->get_player();
+		if (player1.hasKing())
+		{
+			player1.setKing(true);
+			player2.setKing(false);
+			currentClient_ = client1_;
+		}
+		else if (player2.hasKing())
+		{
+			player2.setKing(true);
+			player1.setKing(false);
+			currentClient_ = client2_;
+		}
+		else if (player1.wasKing())
+			currentClient_ = client1_;
+		else
+			currentClient_ = client2_;
+		characterDrawPile_.push_back(client1_->get_player().getCharacter());
+		characterDrawPile_.push_back(client1_->get_player().getCharacter());
+		characterDrawPile_.push_back(client2_->get_player().getCharacter());
+		characterDrawPile_.push_back(client2_->get_player().getCharacter());
+		startRound();
+	}
 }
 
 void Game::startRound()
@@ -370,10 +585,6 @@ void Game::startRound()
 	for (auto character : characterDiscardPile_)
 		characterDrawPile_.push_back(character);
 	characterDiscardPile_.clear();
-	characterDrawPile_.push_back(client1_->get_player().getCharacter());
-	characterDrawPile_.push_back(client1_->get_player().getCharacter());
-	characterDrawPile_.push_back(client2_->get_player().getCharacter());
-	characterDrawPile_.push_back(client2_->get_player().getCharacter());
 	random_shuffle(characterDrawPile_.begin(), characterDrawPile_.end());
 	start_ = true;
 	auto card = characterDrawPile_.back();
@@ -398,19 +609,12 @@ void Game::newTurn() const
 	auto &socket = currentClient_->get_socket();
 	auto &player = currentClient_->get_player();
 	showCharacter(socket);
-	socket.write("\r\n");
-	player.showGold(socket);
-	socket.write("\r\n");
-	player.showBuildings(socket);
-	socket.write("\r\n");
-	player.showCards(socket);
-	socket.write("\r\n");
 	player.showChoices(socket);
 }
 
 void Game::showCharacter(Socket& socket) const
 {
-	socket.write("Je bent nu de: ");
+	socket.write("\r\nJe bent nu de: ");
 	switch (currentCharacter_)
 	{
 	case moordenaar:
@@ -445,26 +649,35 @@ void Game::showCharacter(Socket& socket) const
 void Game::showOpponent() const
 {
 	auto &socket = currentClient_->get_socket();
-	auto &player = client1_->get_player();
 	if (currentClient_ == client1_)
 	{
-		player = client2_->get_player();
+		auto &player = client2_->get_player();
+		player.showGold(socket);
+		socket.write("\r\n");
+		player.showBuildings(socket);
 	}
-	player.showGold(socket);
-	socket.write("\r\n");
-	player.showBuildings(socket);
+	else
+	{
+		auto &player = client1_->get_player();
+		player.showGold(socket);
+		socket.write("\r\n");
+		player.showBuildings(socket);
+	}
 }
 
 void Game::takeGold()
 {
-	for (int get = 2; get > 0 && gold_ != 0; gold_--, get--)
+	int get = 2;
+	for (; get > 0 && gold_ != 0; gold_--, get--)
 		currentClient_->get_player().addGold();
+	currentClient_->get_socket().write("\r\nJe ontvangt " + std::to_string(2-get) +" goudstukken.\r\n");
 }
 
 void Game::takeBuildings()
 {
 	currentClient_->get_player().drawBuilding(buildingDeck_.draw());
 	currentClient_->get_player().drawBuilding(buildingDeck_.draw());
+	currentClient_->get_player().showBuildingChoices(currentClient_->get_socket());
 }
 
 void Game::checkThief() const

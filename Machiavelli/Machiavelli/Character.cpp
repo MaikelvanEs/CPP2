@@ -37,6 +37,11 @@ int Character::getNumber() const
 	return number_;
 }
 
+std::string Character::getName() const
+{
+	return name_;
+}
+
 void Character::setAbility(const bool ability)
 {
 	ability_ = ability;

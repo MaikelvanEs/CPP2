@@ -87,7 +87,7 @@ public:
                 break;
             }
 
-            if (c == '\r\n') {
+            if (c == '\n') {
                 std::stringstream s { "" };
                 for(int i { 0 }; i < buffer.size(); ++i)
                     s << buffer[i];
