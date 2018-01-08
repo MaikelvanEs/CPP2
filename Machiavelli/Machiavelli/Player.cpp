@@ -260,6 +260,14 @@ void Player::killCharacter(const int name, Socket& socket)
 		}
 }
 
+bool Player::checkPrediker()
+{
+	for (auto character : characters_)
+		if (character.getName() == "prediker" && character.isAlive())
+			return true;
+	return false;
+}
+
 void Player::steal()
 {
 	stolen_ = true;
@@ -589,9 +597,12 @@ void Player::condotierreAbility(Socket& socket, const int choice)
 		if (game_._Get()->getOpponentBuildings() >= 8)
 		{
 			socket.write("\r\nTegenstander heeft 8 of meer gebouwen. Je kunt geen gebouwen weghalen.\r\n");
-			const int tempState = state_;
-			state_ = previousState_;
-			previousState_ = tempState;
+			showChoices(socket);
+		}
+		else if (!game_._Get()->checkOpponentPrediker())
+		{
+			socket.write("\r\nTegenstander heeft de prediker. Gebouw weghalen niet mogelijk.\r\n");
+			showChoices(socket);
 		}
 		else
 		{

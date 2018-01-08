@@ -7,6 +7,8 @@
 #include <memory>
 #include "Overzichtskaart.h"
 #include "ClientInfo.h"
+#include <random>
+#include <ctime>
 
 class Game
 {
@@ -38,6 +40,7 @@ public:
 	int getOpponentBuildings() const;
 	void showOpponentBuildings() const;
 	bool checkRemoveBuilding(const int choice, const int gold) const;
+	bool checkOpponentPrediker() const;
 	int removeOpponentBuilding(const int choice);
 	void discardBuilding(const Building building);
 	Building drawBuilding();

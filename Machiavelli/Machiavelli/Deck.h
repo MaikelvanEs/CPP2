@@ -2,6 +2,8 @@
 #define _DECK_H
 #include <vector>
 #include <algorithm>
+#include <random>
+#include <ctime>
 
 namespace cards {
 
@@ -35,7 +37,9 @@ namespace cards {
 		void shuffle_stack()
 		{
 			merge_stacks();
-			std::random_shuffle(drawPile_.begin(), drawPile_.end());
+			std::default_random_engine generator;
+			generator.seed(time(0));
+			std::shuffle(drawPile_.begin(), drawPile_.end(), generator);
 		}
 
 		bool stack_empty() const

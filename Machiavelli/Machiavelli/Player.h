@@ -37,6 +37,7 @@ public:
 	Character getCharacter(const int name);
 	std::vector<int> getAliveCharacters(const int startName);
 	void killCharacter(const int name, Socket& socket);
+	bool checkPrediker();
 
 	void setKing(const int king);
 	bool hasKing();

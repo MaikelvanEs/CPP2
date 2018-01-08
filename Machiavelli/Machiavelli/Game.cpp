@@ -322,6 +322,13 @@ bool Game::checkRemoveBuilding(const int choice, const int gold) const
 	return client1_->get_player().checkBuilding(choice, gold);
 }
 
+bool Game::checkOpponentPrediker() const
+{
+	if (currentClient_ == client1_)
+		return client2_->get_player().checkPrediker();
+	return client1_->get_player().checkPrediker();
+}
+
 int Game::removeOpponentBuilding(const int choice)
 {
 	if (currentClient_ == client1_)
@@ -359,7 +366,7 @@ void Game::showAliveCharacters(Socket& socket, const int startName)
 	auto client2Alive = client2_->get_player().getAliveCharacters(startName);
 	for (auto character : client2Alive)
 		alive.push_back(character);
-	sort(alive.begin(), alive.end(), [](int x, int y) { return x < y; });
+	sort(alive.begin(), alive.end(), [](int x, int y) { return x < y; }); //lambda expression
 	for (auto character : alive)
 	{
 		switch (character)
@@ -585,7 +592,9 @@ void Game::startRound()
 	for (auto character : characterDiscardPile_)
 		characterDrawPile_.push_back(character);
 	characterDiscardPile_.clear();
-	random_shuffle(characterDrawPile_.begin(), characterDrawPile_.end());
+	std::default_random_engine generator;
+	generator.seed(time(0));
+	std::shuffle(characterDrawPile_.begin(), characterDrawPile_.end(), generator);
 	start_ = true;
 	auto card = characterDrawPile_.back();
 	characterDrawPile_.pop_back();
